@@ -1,20 +1,11 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Protezione contro ReferenceError: process is not defined in ambienti browser puri
-const getApiKey = () => {
-  try {
-    return (typeof process !== 'undefined' && process.env) ? process.env.API_KEY : "";
-  } catch (e) {
-    return "";
-  }
-};
-
-const ai = new GoogleGenAI({ apiKey: getApiKey() || "" });
+// Initialize the Gemini API client using the API key from environment variables.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const getChestRewardFlavor = async (username: string) => {
-  const apiKey = getApiKey();
-  if (!apiKey) return { chestName: "Cassa del Pollaio", message: "Hai trovato qualcosa di utile!" };
+  if (!process.env.API_KEY) return { chestName: "Cassa del Pollaio", message: "Hai trovato qualcosa di utile!" };
 
   try {
     const response = await ai.models.generateContent({
@@ -32,15 +23,17 @@ export const getChestRewardFlavor = async (username: string) => {
         }
       }
     });
-    return JSON.parse(response.text);
+    // Extracting text output from GenerateContentResponse using the .text property.
+    const text = response.text || "{}";
+    return JSON.parse(text);
   } catch (error) {
+    console.error("Gemini Error:", error);
     return { chestName: "Cassa del Pollaio", message: "Hai trovato qualcosa di utile!" };
   }
 };
 
 export const getLevelFlavorText = async (level: number) => {
-  const apiKey = getApiKey();
-  if (!apiKey) return { encouragement: "Vola alto!", joke: "Gallina vecchia fa buon brodo... ma salta male!" };
+  if (!process.env.API_KEY) return { encouragement: "Vola alto!", joke: "Gallina vecchia fa buon brodo... ma salta male!" };
 
   try {
     const response = await ai.models.generateContent({
@@ -58,8 +51,11 @@ export const getLevelFlavorText = async (level: number) => {
         }
       }
     });
-    return JSON.parse(response.text);
+    // Extracting text output from GenerateContentResponse using the .text property.
+    const text = response.text || "{}";
+    return JSON.parse(text);
   } catch (error) {
+    console.error("Gemini Error:", error);
     return { encouragement: "Vola alto!", joke: "Gallina vecchia fa buon brodo... ma salta male!" };
   }
 };

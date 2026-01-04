@@ -230,15 +230,20 @@ const GameCanvas: React.FC<Props> = ({ level, activeSkinColor, onScoreUpdate, on
     handleResize();
 
     requestRef.current = requestAnimationFrame(loop);
+
     const handleAction = (e: any) => { 
+      // Se è Game Over, non intercettare il tocco per permettere ai pulsanti di funzionare
+      if (isGameOver || isTeleporting) return;
       if (e.type === 'touchstart') e.preventDefault();
-      if (player.current.isGrounded && !isTeleporting) { 
+      if (player.current.isGrounded) { 
         player.current.vy = -16 * getScale(); 
         player.current.isGrounded = false; 
       } 
     };
+
     window.addEventListener('mousedown', handleAction);
     window.addEventListener('touchstart', handleAction, { passive: false });
+    
     return () => { 
       cancelAnimationFrame(requestRef.current!); 
       window.removeEventListener('resize', handleResize);
@@ -247,7 +252,7 @@ const GameCanvas: React.FC<Props> = ({ level, activeSkinColor, onScoreUpdate, on
     };
   }, [isGameOver, level, isTeleporting]);
 
-  return <canvas ref={canvasRef} className="w-full h-full block" />;
+  return <canvas ref={canvasRef} className="w-full h-full block touch-none" />;
 };
 
 export default GameCanvas;

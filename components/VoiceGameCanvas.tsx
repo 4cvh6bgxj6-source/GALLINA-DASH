@@ -261,10 +261,15 @@ const VoiceGameCanvas: React.FC<Props> = ({ level, activeSkinColor, onScoreUpdat
     requestRef.current = requestAnimationFrame(loop);
 
     const handleAction = (e: any) => {
-      if (!useVoice) jump();
+      if (isGameOver || isTeleporting) return;
+      if (!useVoice) {
+        if (e.type === 'touchstart') e.preventDefault();
+        jump();
+      }
     };
+
     window.addEventListener('mousedown', handleAction);
-    window.addEventListener('touchstart', (e) => { e.preventDefault(); handleAction(e); }, { passive: false });
+    window.addEventListener('touchstart', handleAction, { passive: false });
 
     return () => {
       window.removeEventListener('resize', handleResize);
@@ -274,7 +279,7 @@ const VoiceGameCanvas: React.FC<Props> = ({ level, activeSkinColor, onScoreUpdat
     };
   }, [isGameOver, useVoice, isTeleporting]);
 
-  return <div className="relative w-full h-full"><canvas ref={canvasRef} className="w-full h-full block" /></div>;
+  return <div className="relative w-full h-full"><canvas ref={canvasRef} className="w-full h-full block touch-none" /></div>;
 };
 
 export default VoiceGameCanvas;
