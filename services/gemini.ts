@@ -1,9 +1,21 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Protezione contro ReferenceError: process is not defined in ambienti browser puri
+const getApiKey = () => {
+  try {
+    return (typeof process !== 'undefined' && process.env) ? process.env.API_KEY : "";
+  } catch (e) {
+    return "";
+  }
+};
+
+const ai = new GoogleGenAI({ apiKey: getApiKey() || "" });
 
 export const getChestRewardFlavor = async (username: string) => {
+  const apiKey = getApiKey();
+  if (!apiKey) return { chestName: "Cassa del Pollaio", message: "Hai trovato qualcosa di utile!" };
+
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -27,6 +39,9 @@ export const getChestRewardFlavor = async (username: string) => {
 };
 
 export const getLevelFlavorText = async (level: number) => {
+  const apiKey = getApiKey();
+  if (!apiKey) return { encouragement: "Vola alto!", joke: "Gallina vecchia fa buon brodo... ma salta male!" };
+
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
