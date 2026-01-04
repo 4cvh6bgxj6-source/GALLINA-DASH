@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import GameCanvas from './components/GameCanvas';
 import VoiceGameCanvas from './components/VoiceGameCanvas';
@@ -17,7 +18,6 @@ const SKINS: Skin[] = [
   { id: 'lava', name: 'Gallina Lavica', color: '#ef4444', price: 0, requirement: 'Pass' },
   { id: 'frost', name: 'Gallina Ghiacciata', color: '#60a5fa', price: 0, requirement: 'Pass' },
   { id: 'emerald', name: 'Gallina Smeraldo', color: '#059669', price: 0, requirement: 'Pass' },
-  // Fix: Removed 'border' property as it is not defined in the Skin interface (line 21 error)
   { id: 'obsidian', name: 'Gallina Ossidiana', color: '#1f2937', price: 0, requirement: 'Pass' },
   { id: 'galaxy', name: 'Gallina Galattica', color: '#4c1d95', price: 0, requirement: 'Pass' },
   { id: 'rainbow', name: 'Gallina Arcobaleno', color: 'linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff)', price: 0, requirement: 'Pass' },
@@ -164,11 +164,13 @@ const App: React.FC = () => {
 
   const [levelUpData, setLevelUpData] = useState<{ encouragement: string, joke: string } | null>(null);
   const [claimedRewards, setClaimedRewards] = useState<number[]>([]);
-  
+  const [userExistsInStorage, setUserExistsInStorage] = useState(false);
   const [useVoice, setUseVoice] = useState(false);
 
   const getAccounts = () => JSON.parse(localStorage.getItem('gallina_accounts') || '{}');
+  
   const saveAccount = (p: UserProfile) => {
+    if (!p.username) return;
     const accounts = getAccounts();
     accounts[p.username.toLowerCase().trim()] = { 
         ...p, 
@@ -177,6 +179,15 @@ const App: React.FC = () => {
     };
     localStorage.setItem('gallina_accounts', JSON.stringify(accounts));
   };
+
+  // Monitora se l'utente esiste mentre scrive
+  useEffect(() => {
+    if (view === 'login') {
+      const accounts = getAccounts();
+      const exists = !!accounts[profile.username.toLowerCase().trim()];
+      setUserExistsInStorage(exists && profile.username.trim().length > 0);
+    }
+  }, [profile.username, view]);
 
   const handleLogin = () => {
     const usernameKey = profile.username.toLowerCase().trim();
@@ -222,8 +233,8 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    if (profile.username) saveAccount(profile);
-  }, [profile, claimedRewards, gameState.level]);
+    if (profile.username && view !== 'login') saveAccount(profile);
+  }, [profile, claimedRewards, gameState.level, view]);
 
   const getMultiplier = () => (profile.tier === 'VIP' ? 3 : (profile.tier === 'Premium' ? 2 : 1));
 
@@ -375,15 +386,20 @@ const App: React.FC = () => {
     }
   };
 
+  const handleResetToHome = () => {
+    setGameState(prev => ({ ...prev, score: 0, isGameOver: false, xpGained: 0 }));
+    setView('dashboard');
+  };
+
   if (view === 'login') {
     return (
       <div className="fixed inset-0 bg-indigo-900 flex items-center justify-center p-4 overflow-y-auto">
         <div className="bg-white p-8 rounded-[2.5rem] shadow-2xl w-full max-w-md text-center border-b-8 border-indigo-200 my-auto">
           <h1 className="text-3xl font-black text-indigo-900 mb-2 italic uppercase tracking-tighter">GALLINA DASH</h1>
           <div className="text-7xl mb-4 animate-bounce">🐔</div>
-          <div className="space-y-4 mb-6">
+          <div className="space-y-4 mb-6 text-left">
             <div>
-              <p className="text-[10px] font-black uppercase text-indigo-400 text-left ml-2 mb-1 tracking-widest">USERNAME</p>
+              <p className="text-[10px] font-black uppercase text-indigo-400 ml-2 mb-1 tracking-widest">USERNAME</p>
               <input 
                 type="text" 
                 placeholder="Inserisci nome..." 
@@ -391,9 +407,14 @@ const App: React.FC = () => {
                 value={profile.username}
                 onChange={(e) => setProfile(p => ({ ...p, username: e.target.value }))}
               />
+              {profile.username.trim().length > 0 && (
+                <p className={`text-[10px] font-black uppercase ml-2 mt-2 tracking-tight ${userExistsInStorage ? 'text-green-500' : 'text-indigo-300'}`}>
+                  {userExistsInStorage ? '✅ Account trovato: Bentornato!' : '✨ Nuovo account: Benvenuto!'}
+                </p>
+              )}
             </div>
             <div>
-              <p className="text-[10px] font-black uppercase text-indigo-300 text-left ml-2 mb-1 tracking-widest">CODICE SEGRETO (Opzionale)</p>
+              <p className="text-[10px] font-black uppercase text-indigo-300 ml-2 mb-1 tracking-widest">CODICE SEGRETO (Opzionale)</p>
               <input 
                 type="text" 
                 placeholder="Inserisci codice speciale..." 
@@ -539,7 +560,7 @@ const App: React.FC = () => {
           </div>
           <div className="flex flex-col gap-4">
             <button onClick={startNextLevel} className="w-full py-6 bg-yellow-400 text-indigo-950 text-2xl font-black rounded-3xl shadow-[0_10px_0_rgb(202,138,4)] active:translate-y-2 uppercase italic">PROSSIMO LIVELLO {gameState.level} 🚀</button>
-            <button onClick={() => setView('dashboard')} className="w-full py-4 bg-indigo-950 text-white text-lg font-black rounded-3xl shadow-[0_6px_0_rgb(30,27,75)] uppercase italic opacity-80">TORNA AL POLLAIO 🏠</button>
+            <button onClick={handleResetToHome} className="w-full py-4 bg-indigo-950 text-white text-lg font-black rounded-3xl shadow-[0_6px_0_rgb(30,27,75)] uppercase italic opacity-80">TORNA AL POLLAIO 🏠</button>
           </div>
         </div>
       </div>
@@ -729,7 +750,12 @@ const App: React.FC = () => {
               <p className="text-xl font-bold text-indigo-950 italic uppercase tracking-tighter">SCORE: {gameState.score}</p>
               <p className="text-[10px] font-black text-red-500 uppercase tracking-widest mt-1">XP OTTENUTI: +{gameState.xpGained}</p>
             </div>
-            <button onClick={() => { setGameState(prev => ({ ...prev, score: 0, isGameOver: false, xpGained: 0 })); setView('dashboard'); }} className="w-full py-5 bg-red-500 text-white text-2xl font-black rounded-[2rem] shadow-[0_8px_0_rgb(153,27,27)] active:translate-y-2 uppercase italic">HOME 🏠</button>
+            <button 
+              onClick={handleResetToHome} 
+              className="w-full py-5 bg-red-500 text-white text-2xl font-black rounded-[2rem] shadow-[0_8px_0_rgb(153,27,27)] active:translate-y-2 active:shadow-none transition-all uppercase italic"
+            >
+              HOME 🏠
+            </button>
           </div>
         </div>
       )}
