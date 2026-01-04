@@ -1,0 +1,7 @@
+{
+  "name": "Super Gallina Dash",
+  "description": "Un entusiasmante gioco di piattaforme dove aiuti una gallina coraggiosa a scalare vette sempre più alte. Con livelli a difficoltà crescente e battute generate dall'IA!",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
